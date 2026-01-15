@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Store, Sparkles, Building2 } from "lucide-react";
+import { Store, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 type Role = "buyer" | "artisan" | "sponsor";
@@ -13,7 +13,7 @@ interface AuthFormProps {
 
 export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
     const router = useRouter();
-    const [role, setRole] = useState<Role>(defaultRole);
+    const [role] = useState<Role>(defaultRole);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -71,9 +71,13 @@ export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
             } else {
                 throw new Error("Invalid phone number or OTP.");
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            setError(err.message || "An error occurred.");
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("An error occurred.");
+            }
         } finally {
             setIsLoading(false);
         }

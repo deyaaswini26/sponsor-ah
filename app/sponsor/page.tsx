@@ -95,12 +95,7 @@ export default function SponsorDashboard() {
                         <span className="font-medium text-sm">Logout</span>
                     </button>
 
-                    <div className="mt-6 flex items-center gap-3 px-3">
-                        <div className="w-10 h-10 rounded-full bg-[#1C1C1C] text-white flex items-center justify-center font-serif text-sm">N</div>
-                        <div className="flex-1">
-                            <Box className="w-6 h-6 text-gray-400 ml-auto" />
-                        </div>
-                    </div>
+
                 </div>
             </div>
 

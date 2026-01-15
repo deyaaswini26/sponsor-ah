@@ -37,12 +37,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex justify-center items-center min-h-screen bg-neutral-100`}
       >
-        <div className="relative flex min-h-screen flex-col bg-background pb-16 md:pb-0">
-          <SplashScreen />
-          {children}
-          <MobileNav />
+        <div className="relative w-full max-w-[390px] h-screen max-h-[844px] flex flex-col bg-background shadow-2xl overflow-hidden md:rounded-[2rem] border-gray-200 md:border-[8px]">
+          <div className="relative flex flex-col bg-background pb-16 md:pb-0 h-full overflow-y-auto w-full">
+            <SplashScreen />
+            {children}
+            <MobileNav />
+          </div>
         </div>
       </body>
     </html>

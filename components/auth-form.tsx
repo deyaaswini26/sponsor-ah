@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { Loader2, Sparkles, Store, Building2 } from "lucide-react";
+import { Loader2, Store, Sparkles, Building2 } from "lucide-react";
 import Link from "next/link";
 
 type Role = "buyer" | "artisan" | "sponsor";
-type AuthMode = "signin" | "signup";
 
 interface AuthFormProps {
     defaultRole?: Role;
@@ -17,202 +14,172 @@ interface AuthFormProps {
 export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
     const router = useRouter();
     const [role, setRole] = useState<Role>(defaultRole);
-    const [mode, setMode] = useState<AuthMode>("signin");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Sponsor specific state
     const [phone, setPhone] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+
+    const handleSendOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        // Simulate sending OTP
+        setTimeout(() => {
+            if (phone === "8838265953") {
+                // Test case: do nothing, expect 123456
+                console.log("Test number used. Waiting for 123456.");
+            } else {
+                // Generate random 6 digit OTP
+                const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                setGeneratedOtp(newOtp);
+                alert(`Your OTP is: ${newOtp}`); // Displaying it for user testing
+            }
+            setOtpSent(true);
+            setIsLoading(false);
+        }, 1000);
+    };
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
 
         try {
-            if (role === "sponsor") {
-                // Hardcoded check/test-case for Sponsor
-                if (phone === "8838265953" && otp === "123456") {
-                    // Successful "test" login
+            let isValid = false;
+
+            if (phone === "8838265953") {
+                if (otp === "123456") isValid = true;
+            } else {
+                if (otp === generatedOtp) isValid = true;
+            }
+
+            if (isValid) {
+                // Route based on role
+                if (role === "sponsor") {
                     router.push("/sponsor");
+                } else if (role === "artisan") {
+                    // For now, redirect artisans to home or a placeholder if no artisan dashboard exists
+                    // Assuming home for now as per instructions
+                    router.push("/");
                 } else {
-                    throw new Error("Invalid phone number or OTP.");
+                    // Buyer
+                    router.push("/");
                 }
             } else {
-                // Existing logic for Buyer/Artisan
-                if (mode === "signup") {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    // NOTE: In a real app, you would save the 'role' to a database here
-                } else {
-                    await signInWithEmailAndPassword(auth, email, password);
-                }
-                router.push("/");
+                throw new Error("Invalid phone number or OTP.");
             }
         } catch (err: any) {
             console.error(err);
-            setError(err.message || "An error occurred during authentication.");
+            setError(err.message || "An error occurred.");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Dynamic Content based on Role
+    let roleTitle = "Login";
+    let roleIcon = null;
+
+    if (role === 'sponsor') {
+        roleTitle = "Sponsor Login";
+        roleIcon = (
+            <div className="w-16 h-16 text-[#FF5A5F] mb-6">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+            </div>
+        );
+    } else if (role === 'artisan') {
+        roleTitle = "Artisan Login";
+        roleIcon = <Sparkles className="w-16 h-16 text-[#FF5A5F] mb-6" />;
+    } else {
+        roleTitle = "Buyer Login";
+        roleIcon = <Store className="w-16 h-16 text-[#FF5A5F] mb-6" />;
+    }
+
     return (
-        <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-card rounded-2xl shadow-lg border border-border/50">
-            <div className="text-center space-y-2">
-                <h2 className="text-3xl font-serif font-bold tracking-tight">
-                    {role === "sponsor"
-                        ? "Sponsor Access"
-                        : mode === "signin" ? "Welcome Back" : "Join Artistry Havens"}
-                </h2>
-                <p className="text-muted-foreground">
-                    {role === "sponsor"
-                        ? "Enter your verified credentials"
-                        : mode === "signin"
-                            ? "Enter your details to access your account"
-                            : "Start your journey with us today"}
-                </p>
+        <div className="w-full max-w-[340px] mx-auto p-8 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+            <div className="flex flex-col items-center space-y-2 mb-8 text-center">
+                {roleIcon}
+                <h2 className="text-2xl font-serif font-bold text-[#1C1C1C]">{roleTitle}</h2>
+                <p className="text-sm text-[#6B6B6B]">Enter your phone number to access your account</p>
             </div>
 
-            {/* Role Selection */}
-            <div className="flex p-1 bg-accent/20 rounded-lg overflow-x-auto">
-                <button
-                    onClick={() => setRole("buyer")}
-                    type="button"
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-md transition-all whitespace-nowrap ${role === "buyer"
-                        ? "bg-background text-primary shadow-sm"
-                        : "text-muted-foreground hover:bg-background/50"
-                        }`}
-                >
-                    <Store className="w-4 h-4" />
-                    Buyer
-                </button>
-                <button
-                    onClick={() => setRole("artisan")}
-                    type="button"
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-md transition-all whitespace-nowrap ${role === "artisan"
-                        ? "bg-background text-primary shadow-sm"
-                        : "text-muted-foreground hover:bg-background/50"
-                        }`}
-                >
-                    <Sparkles className="w-4 h-4" />
-                    Artisan
-                </button>
-                <button
-                    onClick={() => setRole("sponsor")}
-                    type="button"
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-md transition-all whitespace-nowrap ${role === "sponsor"
-                        ? "bg-background text-primary shadow-sm"
-                        : "text-muted-foreground hover:bg-background/50"
-                        }`}
-                >
-                    <Building2 className="w-4 h-4" />
-                    Sponsor
-                </button>
-            </div>
+            {/* Optional: Unified Role Toggles at the top if user wants to switch context here? 
+                The user's prompt implied "when i click artisan... log in page must be like sponsor".
+                Usually this means sticking to the role they selected. 
+                I will add small toggles just in case they misclicked, for better UX, or leave it cleaner.
+                Let's keep it clean as per the specific "Sponsor Login" design which didn't have toggles.
+            */}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {role === "sponsor" ? (
-                    <>
-                        <div className="space-y-2">
-                            <label htmlFor="phone" className="text-sm font-medium leading-none">
-                                Phone Number
-                            </label>
+            {!otpSent ? (
+                <form onSubmit={handleSendOtp} className="space-y-6">
+                    <div className="space-y-2">
+                        <label htmlFor="phone" className="text-sm text-[#1C1C1C]">
+                            Mobile Number
+                        </label>
+                        <div className="flex gap-2">
+                            <div className="flex items-center justify-center px-3 py-2 bg-[#EFEFEF] rounded-md text-[#6B6B6B] text-sm font-medium min-w-[50px]">
+                                +91
+                            </div>
                             <input
                                 id="phone"
                                 type="tel"
-                                placeholder="1234567890"
+                                placeholder="10-digit mobile number"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 required
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="flex-1 px-3 py-2 bg-[#FAF8F3] border-none rounded-md text-sm placeholder:text-[#9CA3AF] focus:ring-1 focus:ring-[#FF5A5F] outline-none"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label htmlFor="otp" className="text-sm font-medium leading-none">
-                                OTP
-                            </label>
-                            <input
-                                id="otp"
-                                type="text"
-                                placeholder="123456"
-                                value={otp}
-                                onChange={(e) => setOtp(e.target.value)}
-                                required
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium leading-none">
-                                Email
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                placeholder="m@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="password" className="text-sm font-medium leading-none">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            />
-                        </div>
-                    </>
-                )}
-
-                {error && (
-                    <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                        {error}
                     </div>
-                )}
 
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="inline-flex items-center justify-center w-full h-11 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isLoading ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                        role === "sponsor" ? "Verify & Enter" : (mode === "signin" ? "Sign In" : "Create Account")
-                    )}
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-3 bg-[#EE4B50] hover:bg-[#D43B40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-70"
+                    >
+                        {isLoading ? "Sending..." : "Send OTP"}
+                    </button>
+                </form>
+            ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                    <div className="space-y-2">
+                        <label htmlFor="otp" className="text-sm text-[#1C1C1C]">
+                            Enter OTP
+                        </label>
+                        <input
+                            id="otp"
+                            type="text"
+                            placeholder="Enter 6-digit OTP"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
+                            required
+                            className="w-full px-3 py-2 bg-[#FAF8F3] border-none rounded-md text-sm placeholder:text-[#9CA3AF] focus:ring-1 focus:ring-[#FF5A5F] outline-none"
+                        />
+                    </div>
+                    {error && <p className="text-xs text-red-500">{error}</p>}
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-3 bg-[#EE4B50] hover:bg-[#D43B40] text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-70"
+                    >
+                        {isLoading ? "Verifying..." : "Verify & Login"}
+                    </button>
+                </form>
+            )}
+
+            <div className="mt-8 text-center">
+                <button type="button" className="text-xs text-[#FF5A5F] hover:underline">
+                    Terms & Conditions
                 </button>
-            </form>
-
-            <div className="text-center text-sm">
-                {role !== "sponsor" && (
-                    <>
-                        <span className="text-muted-foreground">
-                            {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
-                        </span>
-                        <button
-                            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-                            className="font-medium text-primary hover:underline underline-offset-4"
-                        >
-                            {mode === "signin" ? "Sign up" : "Sign in"}
-                        </button>
-                    </>
-                )}
             </div>
-
-            <div className="text-center">
+            <div className="mt-4 text-center">
                 <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
                     ← Back to Home
                 </Link>

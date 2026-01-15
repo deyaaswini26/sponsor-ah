@@ -21,7 +21,7 @@ export default function LanguageSelectionPage() {
             // Save language preference (e.g., to localStorage or context)
             localStorage.setItem("user-language", selectedLang);
             // Navigate to the next step (e.g., Authentication or Home)
-            router.push("/auth?role=buyer"); // Defaulting to buyer auth flow for now or home
+            router.push("/select-role");
         }
     };
 

@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Loader2, Sparkles, Store } from "lucide-react";
+import { Loader2, Sparkles, Store, Building2 } from "lucide-react";
 import Link from "next/link";
 
-type Role = "buyer" | "artisan";
+type Role = "buyer" | "artisan" | "sponsor";
 type AuthMode = "signin" | "signup";
 
 interface AuthFormProps {
@@ -23,21 +23,34 @@ export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Sponsor specific state
+    const [phone, setPhone] = useState("");
+    const [otp, setOtp] = useState("");
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
 
         try {
-            if (mode === "signup") {
-                await createUserWithEmailAndPassword(auth, email, password);
-                // NOTE: In a real app, you would save the 'role' to a database (Firestore) here
-                // linked to the user's UID.
+            if (role === "sponsor") {
+                // Hardcoded check/test-case for Sponsor
+                if (phone === "8838265953" && otp === "123456") {
+                    // Successful "test" login
+                    router.push("/sponsor");
+                } else {
+                    throw new Error("Invalid phone number or OTP.");
+                }
             } else {
-                await signInWithEmailAndPassword(auth, email, password);
+                // Existing logic for Buyer/Artisan
+                if (mode === "signup") {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    // NOTE: In a real app, you would save the 'role' to a database here
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+                router.push("/");
             }
-
-            router.push("/");
         } catch (err: any) {
             console.error(err);
             setError(err.message || "An error occurred during authentication.");
@@ -50,23 +63,27 @@ export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
         <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-card rounded-2xl shadow-lg border border-border/50">
             <div className="text-center space-y-2">
                 <h2 className="text-3xl font-serif font-bold tracking-tight">
-                    {mode === "signin" ? "Welcome Back" : "Join Artistry Havens"}
+                    {role === "sponsor"
+                        ? "Sponsor Access"
+                        : mode === "signin" ? "Welcome Back" : "Join Artistry Havens"}
                 </h2>
                 <p className="text-muted-foreground">
-                    {mode === "signin"
-                        ? "Enter your details to access your account"
-                        : "Start your journey with us today"}
+                    {role === "sponsor"
+                        ? "Enter your verified credentials"
+                        : mode === "signin"
+                            ? "Enter your details to access your account"
+                            : "Start your journey with us today"}
                 </p>
             </div>
 
-            {/* Role Selection (only for signup usually, but let's keep it visible/active for context or if we want to segment login logic later) */}
-            <div className="flex p-1 bg-accent/20 rounded-lg">
+            {/* Role Selection */}
+            <div className="flex p-1 bg-accent/20 rounded-lg overflow-x-auto">
                 <button
                     onClick={() => setRole("buyer")}
                     type="button"
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-md transition-all ${role === "buyer"
-                            ? "bg-background text-primary shadow-sm"
-                            : "text-muted-foreground hover:bg-background/50"
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-md transition-all whitespace-nowrap ${role === "buyer"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:bg-background/50"
                         }`}
                 >
                     <Store className="w-4 h-4" />
@@ -75,44 +92,90 @@ export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
                 <button
                     onClick={() => setRole("artisan")}
                     type="button"
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-md transition-all ${role === "artisan"
-                            ? "bg-background text-primary shadow-sm"
-                            : "text-muted-foreground hover:bg-background/50"
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-md transition-all whitespace-nowrap ${role === "artisan"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:bg-background/50"
                         }`}
                 >
                     <Sparkles className="w-4 h-4" />
                     Artisan
                 </button>
+                <button
+                    onClick={() => setRole("sponsor")}
+                    type="button"
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-md transition-all whitespace-nowrap ${role === "sponsor"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:bg-background/50"
+                        }`}
+                >
+                    <Building2 className="w-4 h-4" />
+                    Sponsor
+                </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Email
-                    </label>
-                    <input
-                        id="email"
-                        type="email"
-                        placeholder="m@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Password
-                    </label>
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                </div>
+                {role === "sponsor" ? (
+                    <>
+                        <div className="space-y-2">
+                            <label htmlFor="phone" className="text-sm font-medium leading-none">
+                                Phone Number
+                            </label>
+                            <input
+                                id="phone"
+                                type="tel"
+                                placeholder="1234567890"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                required
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="otp" className="text-sm font-medium leading-none">
+                                OTP
+                            </label>
+                            <input
+                                id="otp"
+                                type="text"
+                                placeholder="123456"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                required
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="text-sm font-medium leading-none">
+                                Email
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                placeholder="m@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="password" className="text-sm font-medium leading-none">
+                                Password
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            />
+                        </div>
+                    </>
+                )}
 
                 {error && (
                     <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
@@ -127,24 +190,26 @@ export default function AuthForm({ defaultRole = "buyer" }: AuthFormProps) {
                 >
                     {isLoading ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : mode === "signin" ? (
-                        "Sign In"
                     ) : (
-                        "Create Account"
+                        role === "sponsor" ? "Verify & Enter" : (mode === "signin" ? "Sign In" : "Create Account")
                     )}
                 </button>
             </form>
 
             <div className="text-center text-sm">
-                <span className="text-muted-foreground">
-                    {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
-                </span>
-                <button
-                    onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-                    className="font-medium text-primary hover:underline underline-offset-4"
-                >
-                    {mode === "signin" ? "Sign up" : "Sign in"}
-                </button>
+                {role !== "sponsor" && (
+                    <>
+                        <span className="text-muted-foreground">
+                            {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
+                        </span>
+                        <button
+                            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                            className="font-medium text-primary hover:underline underline-offset-4"
+                        >
+                            {mode === "signin" ? "Sign up" : "Sign in"}
+                        </button>
+                    </>
+                )}
             </div>
 
             <div className="text-center">

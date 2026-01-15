@@ -27,6 +27,12 @@ export default function Home() {
         >
           Join as Artisan <Sparkles className="ml-2 h-5 w-5" />
         </Link>
+        <Link
+          href="/auth?role=sponsor"
+          className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-accent-foreground bg-accent rounded-full hover:bg-accent/80 transition-colors"
+        >
+          Become a Sponsor <Store className="ml-2 h-5 w-5" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-5xl">

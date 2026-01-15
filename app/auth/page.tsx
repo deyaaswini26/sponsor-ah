@@ -7,7 +7,7 @@ import AuthForm from "@/components/auth-form";
 function AuthPageContent() {
     const searchParams = useSearchParams();
     const roleParam = searchParams.get("role");
-    const defaultRole = (roleParam === "artisan") ? "artisan" : "buyer";
+    const defaultRole = (roleParam === "artisan" || roleParam === "sponsor") ? roleParam : "buyer";
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-accent/5 px-4 py-12">
